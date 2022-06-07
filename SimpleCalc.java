@@ -52,24 +52,25 @@ public class SimpleCalc {
     // uses the "nodeType" to carry out the fitting operation,
     // then changes its nodeType to "constant" for evaluation further up the tree.
     private static double evaluate(ArithmeticNode root){
-        if(root.isConst()){
-            return root.getVal();
-        }
         double[] inputs = {0,0};
-        for(int i = 0; i < 2 ; i++){
-            inputs[i] = evaluate(root.getArg(i));
+        if(!root.isConst()){
+            for(int i = 0; i < 2 ; i++){
+                inputs[i] = evaluate(root.getArg(i));
+            }
         }
         
-        if(root.getType() == NodeType.ADD){
-            return inputs[0]+inputs[1];       } 
-        else if(root.getType() == NodeType.SUB){
-            return inputs[0]-inputs[1];
-        }
-        else if(root.getType() == NodeType.MULT){
-            return inputs[0]*inputs[1];
-        }
-        else if(root.getType() == NodeType.DIV){
-            return inputs[0]/inputs[1];
+        NodeType rootType = root.getType();
+        switch(rootType){
+            case CONST:
+                return root.getVal();
+            case ADD:
+                return inputs[0]+inputs[1];
+            case SUB:
+                return inputs[0]-inputs[1];
+            case MULT:
+                return inputs[0]*inputs[1];
+            case DIV:
+                return inputs[0]/inputs[1];
         }
 
         // For detecting edge cases
