@@ -3,134 +3,93 @@ import java.util.ArrayList;
 public class SimpleCalc {
     public static void main(String[] args) throws Exception {
 
+        ArithmeticNode a = createConstantNode(35);
+        ArithmeticNode b = createConstantNode(5);
 
-        ArithmeticNode test = StringToOpTree(args[0]);
-        test.evaluate();
-        System.out.println(test.value);
-    }
+        // Test 35+5 
+        testOp(a, b, NodeType.ADD, 1, 40);
 
-    // A recursive parsing algorithm for turning a string into a tree of arithmetic operations.
-    // It builds addition first, then subtraction, then multiplication/division.
-    // Evaluation of expressions runs bottom-up, so we're constructing our tree
-    // in the opposite order of operations.
-    // Example:
-    //      3400/2 - 3 + 10*5
-    //      (3400/2 - 3) + (10*5)
-    //      The root arithmeticNode has type "+" and inputs (3400/2-3), 10*5
-    //      [(3400/2) - (3)] + [(10)*(5)]
-    //      { ( [3400] / [2] ) - [3] } + { [10] * [5] }
-    // Here, square brackets denote constants, and the parentheses/curly braces mark the boundaries of 
-    // ArithmeticNode objects.
-    public static ArithmeticNode StringToOpTree(String input){
-        ArithmeticNode vertex = new ArithmeticNode(0, "null", null);
-        // Loop through the input string to look for mathematical operations
-        boolean constantExpression = true;
-        int multIndex= 0;
-        int subtractionIndex =0;
-        boolean multFound = false;
-        boolean additionFound = false;
-        boolean subtractionFound = false;
+        // Test 35-5
+        testOp(a, b, NodeType.SUB, 2, 30 );
 
-        // Loop through the string.
-        for(int i = 0 ; i < input.length(); i++){
+        // Test 35*5 
+        testOp(a, b, NodeType.MULT, 3, 175);
 
-            // If a multiplicative operation is found, record where it is,.
-            if(input.charAt(i) == '*' || input.charAt(i)== '/'){
-                multIndex = i;
-                multFound = true;
-                constantExpression = false;
-            } 
+        // Test 35/5
+        testOp(a, b, NodeType.DIV, 4, 7);
 
-            // Similar for subtraction.
-            if(input.charAt(i) == '-'){
-                subtractionIndex = i;
-                subtractionFound = true;
-                constantExpression = false;
-            }
-            
-            // If addition is found, make the first arithmetic node:
-            // Addition is treated as breaking the string in half:
-            // (first part of string) + (last part of string)
-            // Once this is done, break the loop. 
-            if(input.charAt(i) == '+'){
-                additionFound = true;
-                constantExpression = false;
-                String leftIn = input.substring(0, i);
-                String rightIn = input.substring(i+1);
-                System.out.println(leftIn);
-                System.out.println(rightIn);
-                vertex = addArgs(leftIn, rightIn, Character.toString(input.charAt(i)), vertex);
-                break;
-            }
-        }
+        // 35 + 5
+        ArithmeticNode test1 = createOperation(a, b, NodeType.ADD);
+        // 35/5
+        ArithmeticNode test2 = createOperation(a, b, NodeType.DIV);
+        // (35+5) - (35/5)
+        testOp(test1, test2, NodeType.SUB, 5, 33);
 
-        // If addition was not found, but subtraction was, we have only subtraction operations in our string.
-        // If only subtraction exists, then we have
-        // (first part of string) - a - b - c -....
-        // which is equivalent to
-        // (first part of string) - (a+b+c + ...)
-        // So when handling subtraction, we make an arithmetic node where all the signs in the 
-        // right half of the string are flipped. 
-        if(!additionFound && subtractionFound){
-            int i = subtractionIndex;
-            String leftIn = input.substring(0, i);
-            String rightIn = input.substring(i+1);
-            rightIn.replace('-','+');
-            System.out.println(leftIn);
-            System.out.println(rightIn);
-            vertex = addArgs(leftIn, rightIn, Character.toString(input.charAt(i)), vertex);
-        }
-
-        // If neither addition or subtraction were found, 
-        // then we have only multiplication and division remaining.
-        // We parenthesize a*b*c as (a*b)*c
-        if(multFound && !additionFound && !subtractionFound){
-            int i = multIndex;
-            // We start with the positions directly to the left and right of the operator
-            String leftIn = input.substring(0, i);
-            String rightIn = input.substring(i+1);
-            vertex = addArgs(leftIn, rightIn, Character.toString(input.charAt(i)), vertex);
-
-            
-        }
-
-        // If we go through that loop and find no operators, we're at the bottom of our recursion,
-        // and thus have a string we can read as a numerical constant.
-        if(constantExpression == true){
-            vertex.value = Double.parseDouble(input);
-            vertex.nodeType = "const";
-        }
-        return vertex; 
 
     }
 
-    public static ArithmeticNode createOperation(ArithmeticNode val1,ArithmeticNode val2, String operation){
+
+    public static void testOp(ArithmeticNode a, ArithmeticNode b, NodeType operation, int testNum, double goal){
+         // Test (a OP b)
+         ArithmeticNode addTest = createOperation(a, b, operation);
+         System.out.println("Test " + testNum +":");
+         System.out.println("Expecting : "+ goal);
+         double result = evaluate(addTest);
+         System.out.println("Result: " + result);
+         printTestResult(result, goal, testNum);
+         System.out.println();
+    }
+
+    public static void printTestResult(double result, double goal, int testNum){
+        if (result == goal){
+            System.out.println("Test " + testNum + " passed.");
+        } else {
+            System.out.println("Test " + testNum + " FAILED.");
+        }
+    }
+
+    // if the inputs are all constants, 
+    // uses the "nodeType" to carry out the fitting operation,
+    // then changes its nodeType to "constant" for evaluation further up the tree.
+    private static double evaluate(ArithmeticNode root){
+        if(root.isConst()){
+            return root.getVal();
+        }
+        double[] inputs = {0,0};
+        for(int i = 0; i < 2 ; i++){
+            inputs[i] = evaluate(root.getArg(i));
+        }
+        
+        if(root.getType() == NodeType.ADD){
+            return inputs[0]+inputs[1];       } 
+        else if(root.getType() == NodeType.SUB){
+            return inputs[0]-inputs[1];
+        }
+        else if(root.getType() == NodeType.MULT){
+            return inputs[0]*inputs[1];
+        }
+        else if(root.getType() == NodeType.DIV){
+            return inputs[0]/inputs[1];
+        }
+
+        // For detecting edge cases
+        return Double.NaN;
+        
+        
+    }
+
+    
+    public static ArithmeticNode createOperation(ArithmeticNode val1,ArithmeticNode val2, NodeType operation){
         ArrayList<ArithmeticNode> inputs = new ArrayList<ArithmeticNode>(2);
         inputs.add(val1);
         inputs.add(val2);
         return new ArithmeticNode(0, operation , inputs);
     }
 
-    // Takes an ArithmeticNode with the intention to give it two subnodes, based on which operation is happening where.
-    // For example, 
-    // LeftArg = "3+4", RightArg = "5-6", opType = '/'
-    // This creates an arithmetic node dividing the left input by the right.
-    public static ArithmeticNode addArgs(String leftArg, String rightArg, String opType, ArithmeticNode root){
-        ArithmeticNode left = StringToOpTree(leftArg);
-        ArithmeticNode right = StringToOpTree(rightArg);
-        root.addInput(left);
-        root.addInput(right);
-        root.nodeType = opType;
-        return root;
+    public static ArithmeticNode createConstantNode(double val){
+        System.out.println(val);
+        return new ArithmeticNode(val, NodeType.CONST , null);
     }
 
-    public static boolean isOperation(char toCheck){
-        char [] validOps = {'+','-','/','*'};
-        for(int i = 0; i < validOps.length; i++){
-            if(toCheck == validOps[i]){
-                return true;
-            }
-        }
-        return false;
-    }
+
 }
