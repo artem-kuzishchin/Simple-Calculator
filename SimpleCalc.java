@@ -34,7 +34,7 @@ public class SimpleCalc {
          ArithmeticNode addTest = createOperation(a, b, operation);
          System.out.println("Test " + testNum +":");
          System.out.println("Expecting : "+ goal);
-         double result = evaluate(addTest);
+         double result = addTest.evaluate();
          System.out.println("Result: " + result);
          printTestResult(result, goal, testNum);
          System.out.println();
@@ -47,49 +47,16 @@ public class SimpleCalc {
             System.out.println("Test " + testNum + " FAILED.");
         }
     }
-
-    // if the inputs are all constants, 
-    // uses the "nodeType" to carry out the fitting operation,
-    // then changes its nodeType to "constant" for evaluation further up the tree.
-    private static double evaluate(ArithmeticNode root){
-        double[] inputs = {0,0};
-        if(!root.isConst()){
-            for(int i = 0; i < 2 ; i++){
-                inputs[i] = evaluate(root.getArg(i));
-            }
-        }
-        
-        NodeType rootType = root.getType();
-        switch(rootType){
-            case CONST:
-                return root.getVal();
-            case ADD:
-                return inputs[0]+inputs[1];
-            case SUB:
-                return inputs[0]-inputs[1];
-            case MULT:
-                return inputs[0]*inputs[1];
-            case DIV:
-                return inputs[0]/inputs[1];
-        }
-
-        // For detecting edge cases
-        return Double.NaN;
-        
-        
-    }
-
     
     public static ArithmeticNode createOperation(ArithmeticNode val1,ArithmeticNode val2, NodeType operation){
         ArrayList<ArithmeticNode> inputs = new ArrayList<ArithmeticNode>(2);
         inputs.add(val1);
         inputs.add(val2);
-        return new ArithmeticNode(0, operation , inputs);
+        return new Operation(operation , inputs);
     }
 
     public static ArithmeticNode createConstantNode(double val){
-        System.out.println(val);
-        return new ArithmeticNode(val, NodeType.CONST , null);
+        return new Constant(val);
     }
 
 
