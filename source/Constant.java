@@ -1,3 +1,5 @@
+package com.source.app;
+
 public class Constant implements ArithmeticNode{
     double value;
 
@@ -5,7 +7,7 @@ public class Constant implements ArithmeticNode{
         this.value = value;
     }
 
-    public double evaluate(){
+    public double resolve(){
         return this.value;
     }
 }
